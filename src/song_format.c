@@ -59,10 +59,8 @@ copy_tags(char *dest, char *end, const struct mpd_song *song, enum mpd_tag_type 
 }
 
 static const char *
-format_mtime(char *buffer, size_t buffer_size,
-	     const struct mpd_song *song, const char *format)
+format_time(char *buffer, size_t buffer_size, time_t t, const char *format)
 {
-	time_t t = mpd_song_get_last_modified(song);
 	if (t == 0)
 		return NULL;
 
@@ -75,6 +73,21 @@ format_mtime(char *buffer, size_t buffer_size,
 
 	strftime(buffer, buffer_size, format, &tm);
 	return buffer;
+}
+
+static const char *
+format_mtime(char *buffer, size_t buffer_size,
+	     const struct mpd_song *song, const char *format)
+{
+	return format_time(buffer, buffer_size,
+			   mpd_song_get_last_modified(song), format);
+}
+
+static const char *
+format_atime(char *buffer, size_t buffer_size,
+	     const struct mpd_song *song, const char *format)
+{
+	return format_time(buffer, buffer_size, mpd_song_get_added(song), format);
 }
 
 /**
@@ -121,6 +134,10 @@ song_value(const struct mpd_song *song, const char *name)
 		value = format_mtime(buffer, sizeof(buffer), song, "%c");
 	} else if (strcmp(name, "mdate") == 0) {
 		value = format_mtime(buffer, sizeof(buffer), song, "%x");
+	} else if (strcmp(name, "atime") == 0) {
+		value = format_atime(buffer, sizeof(buffer), song, "%c");
+	} else if (strcmp(name, "adate") == 0) {
+		value = format_atime(buffer, sizeof(buffer), song, "%x");
 	} else if (strcmp(name, "audioformat") == 0) {
 		const struct mpd_audio_format *audio_format = mpd_song_get_audio_format(song);
 		if (audio_format == NULL)
